@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>ProTraderHack Admin Panel</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:20px auto;padding:10px}
+    input,textarea,button,select{display:block;margin:8px 0;padding:8px;width:100%;max-width:600px}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .small{width:200px}
+    .green{background:#0a0;color:#fff;padding:6px;border:none}
+    .red{background:#c00;color:#fff;padding:6px;border:none}
+    .card{border:1px solid #ddd;padding:12px;margin:10px 0;border-radius:8px}
+  </style>
+</head>
+<body>
+  <h2>ProTraderHack — Admin Panel</h2>
+  <p>Use your Firebase project config below. This admin panel runs in the browser and writes signals & proofs into Firestore and Storage.</p>
+
+  <h3>1) Firebase Config (Paste your project's config)</h3>
+  <textarea id="fbconf" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}' rows=6></textarea>
+  <button id="init">Initialize Firebase</button>
+
+  <div id="authbox" class="card" style="display:none">
+    <h3>2) Sign in as Admin</h3>
+    <input id="email" placeholder="admin email">
+    <input id="password" type="password" placeholder="password">
+    <div class="row"><button id="signin" class="green small">Sign In</button><button id="signout" class="red small">Sign Out</button></div>
+    <div id="authmsg"></div>
+  </div>
+
+  <div id="main" style="display:none">
+    <h3>3) Maintenance</h3>
+    <div class="card">
+      <label>Maintenance message</label>
+      <input id="maint_msg" placeholder="App on Maintenance">
+      <div class="row"><button id="enableMaint" class="red small">Enable</button><button id="disableMaint" class="green small">Disable</button></div>
+    </div>
+
+    <h3>4) Post Signal</h3>
+    <div class="card">
+      <input id="symbol" placeholder="Symbol e.g. BTCUSDT or RELIANCE.NS">
+      <select id="market"><option value="crypto">crypto</option><option value="indian">indian</option><option value="forex">forex</option></select>
+      <input id="interval" placeholder="Interval e.g. 5m">
+      <select id="signal"><option>BUY</option><option>SELL</option><option>HOLD</option></select>
+      <input id="entry" placeholder="Entry price">
+      <input id="stoploss" placeholder="Stop loss price">
+      <input id="tp1" placeholder="Take profit 1 (optional)">
+      <input id="pattern" placeholder="Pattern names comma separated">
+      <textarea id="reasons" placeholder="Reasons (comma separated)"></textarea>
+      <label>Attach proof image (optional)</label>
+      <input type="file" id="prooffile">
+      <div class="row"><button id="postSignal" class="green">Post Signal</button></div>
+      <div id="signalStatus"></div>
+    </div>
+
+    <h3>Existing Signals</h3>
+    <div id="signalsList"></div>
+  </div>
+
+<script>
+let app, auth, db, storage;
+document.getElementById('init').onclick = ()=>{
+  try{
+    const cfg = JSON.parse(document.getElementById('fbconf').value);
+    app = firebase.initializeApp(cfg);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    storage = firebase.storage();
+    document.getElementById('authbox').style.display = 'block';
+    document.getElementById('init').innerText = 'Initialized';
+  }catch(e){ alert('Invalid config JSON') }
+}
+
+document.getElementById('signin').onclick = async ()=>{
+  const email = document.getElementById('email').value;
+  const pw = document.getElementById('password').value;
+  try{
+    await auth.signInWithEmailAndPassword(email,pw);
+    document.getElementById('authmsg').innerText = 'Signed in as '+email;
+    document.getElementById('main').style.display='block';
+    loadSignals();
+  }catch(e){ alert('Signin failed: '+e.message) }
+}
+
+document.getElementById('signout').onclick = ()=>{ auth.signOut(); document.getElementById('main').style.display='none'; document.getElementById('authmsg').innerText=''; }
+
+document.getElementById('enableMaint').onclick = ()=> setMaint(true);
+document.getElementById('disableMaint').onclick = ()=> setMaint(false);
+
+async function setMaint(val){
+  const msg = document.getElementById('maint_msg').value || 'App on Maintenance, Will be Back Soon';
+  await db.collection('admin').doc('settings').set({maintenance:val, maintenance_message: msg, updated_at: firebase.firestore.FieldValue.serverTimestamp()});
+  alert('Maintenance set to '+val);
+}
+
+document.getElementById('postSignal').onclick = async ()=>{
+  const s = {
+    symbol: document.getElementById('symbol').value,
+    market: document.getElementById('market').value,
+    interval: document.getElementById('interval').value,
+    signal: document.getElementById('signal').value,
+    entry: parseFloat(document.getElementById('entry').value)||null,
+    stop_loss: parseFloat(document.getElementById('stoploss').value)||null,
+    take_profits: [],
+    patterns: (document.getElementById('pattern').value||'').split(',').map(x=>x.trim()).filter(Boolean),
+    reasons: (document.getElementById('reasons').value||'').split(',').map(x=>x.trim()).filter(Boolean),
+    indicators: {},
+    support_levels: [],
+    resistance_levels: [],
+    last_price: null,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const tp = parseFloat(document.getElementById('tp1').value);
+  if(tp) s.take_profits.push(tp);
+  const file = document.getElementById('prooffile').files[0];
+  let proofId = null;
+  if(file){
+    const ref = storage.ref('proofs/'+Date.now()+'_'+file.name);
+    const up = await ref.put(file);
+    const url = await ref.getDownloadURL();
+    // add proof doc
+    const pd = await db.collection('proofs').add({image_url:url, description: 'Uploaded by admin', created_at: firebase.firestore.FieldValue.serverTimestamp()});
+    proofId = pd.id;
+    s.proof_id = proofId;
+  }
+  const doc = await db.collection('signals').add(s);
+  document.getElementById('signalStatus').innerText = 'Posted signal id '+doc.id;
+  loadSignals();
+}
+
+async function loadSignals(){
+  const list = document.getElementById('signalsList');
+  list.innerHTML = '';
+  const snap = await db.collection('signals').orderBy('timestamp','desc').limit(50).get();
+  snap.forEach(doc=>{
+    const d = doc.data();
+    const el = document.createElement('div');
+    el.className='card';
+    el.innerHTML = '<b>'+d.symbol+'</b> ['+d.signal+'] - entry:'+d.entry+' SL:'+d.stop_loss+' patterns:'+(d.patterns||[]).join(', ')+
+      '<div><button onclick="deleteSignal(\''+doc.id+'\')">Delete</button> <button onclick="viewProof(\''+ (d.proof_id||'') +'\')">Proof</button></div>';
+    list.appendChild(el);
+  });
+}
+
+window.deleteSignal = async function(id){
+  if(!confirm('Delete?')) return;
+  await db.collection('signals').doc(id).delete();
+  loadSignals();
+}
+
+window.viewProof = async function(proofId){
+  if(!proofId) return alert('No proof');
+  const pd = await db.collection('proofs').doc(proofId).get();
+  const data = pd.data();
+  if(data && data.image_url) window.open(data.image_url, '_blank');
+}
+</script>
+</body>
+</html>

@@ -4,42 +4,64 @@
   <title>PTH Admin</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    input, button { margin: 5px; padding: 6px; }
-    .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+    .card { border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 10px; }
+    input, select { margin: 5px 0; padding: 5px; width: 100%; }
+    button { padding: 8px 12px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    pre { background:#eee; padding:10px; border-radius:5px; max-height:200px; overflow:auto; }
   </style>
 </head>
 <body>
-  <h1>ProTraderHack Admin</h1>
+  <h1>ProTraderHack Admin Panel</h1>
 
   <div class="card">
-    <h3>Add API Key</h3>
-    <input id="addKey" placeholder="Enter key" />
-    <button onclick="addKey()">Add</button>
+    <h3>Add Key</h3>
+    <form id="addForm">
+      <input type="text" name="key" placeholder="Key" required />
+      <select name="role">
+        <option value="user">User</option>
+        <option value="owner">Owner</option>
+      </select>
+      <input type="number" name="days" placeholder="Valid Days (optional)" />
+      <button type="submit">Add Key</button>
+    </form>
+    <pre id="addOutput"></pre>
   </div>
 
   <div class="card">
-    <h3>Delete API Key</h3>
-    <input id="delKey" placeholder="Enter key" />
-    <button onclick="delKey()">Delete</button>
+    <h3>Delete Key</h3>
+    <form id="deleteForm">
+      <input type="text" name="key" placeholder="Key" required />
+      <button type="submit">Delete Key</button>
+    </form>
+    <pre id="deleteOutput"></pre>
   </div>
 
-  <pre id="output"></pre>
+  <div class="card">
+    <h3>List All Keys</h3>
+    <button onclick="listKeys()">Fetch Keys</button>
+    <pre id="keysOutput"></pre>
+  </div>
 
-<script>
-async function addKey() {
-  const key = document.getElementById('addKey').value;
-  let fd = new FormData();
-  fd.append("key", key);
-  const res = await fetch("/api/add-key", { method: "POST", body: fd });
-  document.getElementById('output').textContent = await res.text();
-}
-async function delKey() {
-  const key = document.getElementById('delKey').value;
-  let fd = new FormData();
-  fd.append("key", key);
-  const res = await fetch("/api/delete-key", { method: "POST", body: fd });
-  document.getElementById('output').textContent = await res.text();
-}
-</script>
+  <script>
+    async function handleForm(formId, url, outputId) {
+      let form = document.getElementById(formId);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        let data = new FormData(form);
+        let res = await fetch(url, { method: "POST", body: data });
+        let json = await res.json();
+        document.getElementById(outputId).innerText = JSON.stringify(json, null, 2);
+      });
+    }
+    handleForm("addForm", "/api/add-key", "addOutput");
+    handleForm("deleteForm", "/api/delete-key", "deleteOutput");
+
+    async function listKeys() {
+      let res = await fetch("/api/list-keys");
+      let data = await res.json();
+      document.getElementById("keysOutput").innerText = JSON.stringify(data, null, 2);
+    }
+  </script>
 </body>
-      </html>
+</html>

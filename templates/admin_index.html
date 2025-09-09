@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PTH Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { margin: 5px; padding: 6px; }
+    .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>ProTraderHack Admin</h1>
+
+  <div class="card">
+    <h3>Add API Key</h3>
+    <input id="addKey" placeholder="Enter key" />
+    <button onclick="addKey()">Add</button>
+  </div>
+
+  <div class="card">
+    <h3>Delete API Key</h3>
+    <input id="delKey" placeholder="Enter key" />
+    <button onclick="delKey()">Delete</button>
+  </div>
+
+  <pre id="output"></pre>
+
+<script>
+async function addKey() {
+  const key = document.getElementById('addKey').value;
+  let fd = new FormData();
+  fd.append("key", key);
+  const res = await fetch("/api/add-key", { method: "POST", body: fd });
+  document.getElementById('output').textContent = await res.text();
+}
+async function delKey() {
+  const key = document.getElementById('delKey').value;
+  let fd = new FormData();
+  fd.append("key", key);
+  const res = await fetch("/api/delete-key", { method: "POST", body: fd });
+  document.getElementById('output').textContent = await res.text();
+}
+</script>
+</body>
+      </html>

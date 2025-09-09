@@ -14,12 +14,16 @@ def index():
 @app.route("/api/add-key", methods=["POST"])
 def add_key():
     key = request.form.get("key")
+    role = request.form.get("role", "user")
+    days = request.form.get("days", None)
     if not key:
         return jsonify({"error": "missing key"}), 400
     try:
-        r = requests.post(f"{BACKEND_URL}/owner/add-key",
-                          params={"key": key},
-                          headers={"X-OWNER-KEY": OWNER_KEY})
+        r = requests.post(
+            f"{BACKEND_URL}/owner/add-key",
+            json={"key": key, "role": role, "days": days},
+            headers={"X-OWNER-KEY": OWNER_KEY}
+        )
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -30,9 +34,22 @@ def delete_key():
     if not key:
         return jsonify({"error": "missing key"}), 400
     try:
-        r = requests.post(f"{BACKEND_URL}/owner/delete-key",
-                          params={"key": key},
-                          headers={"X-OWNER-KEY": OWNER_KEY})
+        r = requests.post(
+            f"{BACKEND_URL}/owner/delete-key",
+            json={"key": key},
+            headers={"X-OWNER-KEY": OWNER_KEY}
+        )
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/list-keys", methods=["GET"])
+def list_keys():
+    try:
+        r = requests.get(
+            f"{BACKEND_URL}/owner/list-keys",
+            headers={"X-OWNER-KEY": OWNER_KEY}
+        )
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"error": str(e)}), 500

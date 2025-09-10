@@ -1,67 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PTH Admin</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .card { border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 10px; }
-    input, select { margin: 5px 0; padding: 5px; width: 100%; }
-    button { padding: 8px 12px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    pre { background:#eee; padding:10px; border-radius:5px; max-height:200px; overflow:auto; }
-  </style>
+    <title>PTH Admin Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { margin-bottom: 20px; }
+        input, button { padding: 8px; margin: 4px; }
+        .flash { padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
 </head>
 <body>
-  <h1>ProTraderHack Admin Panel</h1>
+    <h2>ProTraderHack Admin Panel</h2>
 
-  <div class="card">
-    <h3>Add Key</h3>
-    <form id="addForm">
-      <input type="text" name="key" placeholder="Key" required />
-      <select name="role">
-        <option value="user">User</option>
-        <option value="owner">Owner</option>
-      </select>
-      <input type="number" name="days" placeholder="Valid Days (optional)" />
-      <button type="submit">Add Key</button>
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash {{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <h3>Add API Key</h3>
+    <form method="post" action="/api/add-key">
+        <input type="text" name="key" placeholder="Key" required>
+        <input type="text" name="role" placeholder="Role (user/owner)" value="user">
+        <input type="number" name="days" placeholder="Valid days (optional)">
+        <button type="submit">Add</button>
     </form>
-    <pre id="addOutput"></pre>
-  </div>
 
-  <div class="card">
-    <h3>Delete Key</h3>
-    <form id="deleteForm">
-      <input type="text" name="key" placeholder="Key" required />
-      <button type="submit">Delete Key</button>
+    <h3>Delete API Key</h3>
+    <form method="post" action="/api/delete-key">
+        <input type="text" name="key" placeholder="Key" required>
+        <button type="submit">Delete</button>
     </form>
-    <pre id="deleteOutput"></pre>
-  </div>
-
-  <div class="card">
-    <h3>List All Keys</h3>
-    <button onclick="listKeys()">Fetch Keys</button>
-    <pre id="keysOutput"></pre>
-  </div>
-
-  <script>
-    async function handleForm(formId, url, outputId) {
-      let form = document.getElementById(formId);
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        let data = new FormData(form);
-        let res = await fetch(url, { method: "POST", body: data });
-        let json = await res.json();
-        document.getElementById(outputId).innerText = JSON.stringify(json, null, 2);
-      });
-    }
-    handleForm("addForm", "/api/add-key", "addOutput");
-    handleForm("deleteForm", "/api/delete-key", "deleteOutput");
-
-    async function listKeys() {
-      let res = await fetch("/api/list-keys");
-      let data = await res.json();
-      document.getElementById("keysOutput").innerText = JSON.stringify(data, null, 2);
-    }
-  </script>
 </body>
-</html>
+                        </html>

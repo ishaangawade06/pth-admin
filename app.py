@@ -1,7 +1,8 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, redirect, url_for, flash
 import os, requests
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "supersecretlocal")
 
 # Config
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://protraderhack.onrender.com").rstrip("/")
@@ -18,7 +19,8 @@ def add_key():
     days = request.form.get("days", None)
 
     if not key:
-        return jsonify({"error": "missing key"}), 400
+        flash("❌ Missing key", "error")
+        return redirect(url_for("index"))
 
     try:
         payload = {"key": key, "role": role}
@@ -31,15 +33,23 @@ def add_key():
             headers={"X-OWNER-KEY": OWNER_KEY},
             timeout=15
         )
-        return jsonify(r.json()), r.status_code
+
+        if r.status_code == 200:
+            flash(f"✅ Key '{key}' added successfully", "success")
+        else:
+            flash(f"❌ Failed to add key: {r.text}", "error")
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        flash(f"❌ Error: {str(e)}", "error")
+
+    return redirect(url_for("index"))
 
 @app.route("/api/delete-key", methods=["POST"])
 def delete_key():
     key = request.form.get("key")
     if not key:
-        return jsonify({"error": "missing key"}), 400
+        flash("❌ Missing key", "error")
+        return redirect(url_for("index"))
+
     try:
         r = requests.post(
             f"{BACKEND_URL}/owner/delete-key",
@@ -47,9 +57,14 @@ def delete_key():
             headers={"X-OWNER-KEY": OWNER_KEY},
             timeout=15
         )
-        return jsonify(r.json()), r.status_code
+        if r.status_code == 200:
+            flash(f"✅ Key '{key}' deleted successfully", "success")
+        else:
+            flash(f"❌ Failed to delete key: {r.text}", "error")
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        flash(f"❌ Error: {str(e)}", "error")
+
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

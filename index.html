@@ -2,146 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Admin Panel - ProTraderHack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PTH Admin Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 </head>
-<body class="bg-gray-900 text-white font-sans">
+<body>
+  <h2>⚡ Admin Dashboard</h2>
 
-  <!-- Login Page -->
-  <div id="login-page" class="h-screen flex items-center justify-center">
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
-      <h1 class="text-2xl font-bold text-center mb-6">🔐 PTH Admin Login</h1>
-      <input id="email" type="email" placeholder="Email" class="w-full p-3 mb-3 rounded bg-gray-700 text-white focus:outline-none">
-      <input id="password" type="password" placeholder="Password" class="w-full p-3 mb-3 rounded bg-gray-700 text-white focus:outline-none">
-      <button onclick="login()" class="w-full bg-green-500 hover:bg-green-600 p-3 rounded font-bold">Login</button>
-      <p id="login-error" class="text-red-400 text-sm mt-3 hidden">❌ Invalid credentials</p>
-    </div>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="dashboard" class="hidden h-screen flex">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-gray-800 p-6">
-      <h2 class="text-xl font-bold mb-6">📊 PTH Admin</h2>
-      <nav>
-        <ul>
-          <li class="mb-4"><a href="#" onclick="showTab('overview')" class="hover:text-green-400">Dashboard</a></li>
-          <li class="mb-4"><a href="#" onclick="showTab('keys')" class="hover:text-green-400">🔑 Manage Keys</a></li>
-          <li class="mb-4"><a href="#" onclick="showTab('signals')" class="hover:text-green-400">📈 Signals</a></li>
-          <li class="mb-4"><a href="#" onclick="showTab('settings')" class="hover:text-green-400">⚙ Settings</a></li>
-          <li><button onclick="logout()" class="text-red-400 hover:text-red-500">🚪 Logout</button></li>
-        </ul>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 p-8 overflow-y-auto">
-      <section id="overview-tab">
-        <h1 class="text-3xl font-bold mb-6">📊 Dashboard Overview</h1>
-        <p class="mb-4">Welcome Admin! Here you can manage signals, keys, and monitor usage.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="bg-gray-700 p-6 rounded-lg shadow">
-            <h2 class="text-lg font-bold">Active Keys</h2>
-            <p id="active-keys" class="text-2xl">0</p>
-          </div>
-          <div class="bg-gray-700 p-6 rounded-lg shadow">
-            <h2 class="text-lg font-bold">Total Users</h2>
-            <p id="total-users" class="text-2xl">0</p>
-          </div>
-          <div class="bg-gray-700 p-6 rounded-lg shadow">
-            <h2 class="text-lg font-bold">Signals Sent</h2>
-            <p id="signals-sent" class="text-2xl">0</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="keys-tab" class="hidden">
-        <h1 class="text-3xl font-bold mb-6">🔑 Manage Keys</h1>
-        <button onclick="generateKey()" class="bg-green-500 p-2 rounded mb-4">+ Generate Key</button>
-        <ul id="keys-list"></ul>
-      </section>
-
-      <section id="signals-tab" class="hidden">
-        <h1 class="text-3xl font-bold mb-6">📈 Signals</h1>
-        <p>Latest Trading Signals:</p>
-        <ul id="signals-list"></ul>
-      </section>
-
-      <section id="settings-tab" class="hidden">
-        <h1 class="text-3xl font-bold mb-6">⚙ Settings</h1>
-        <p>Manage app settings here.</p>
-      </section>
-    </main>
-  </div>
+  <input id="pair" type="text" placeholder="Pair (e.g. BTC/USDT)"><br>
+  <input id="action" type="text" placeholder="Action (Buy/Sell)"><br>
+  <input id="price" type="number" placeholder="Price"><br>
+  <button onclick="addSignal()">Add Signal</button>
 
   <script>
-    // ✅ Replace with your Firebase config
+    // Firebase Config
     const firebaseConfig = {
-  apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
-  authDomain: "protraderhack-d67f0.firebaseapp.com",
-  projectId: "protraderhack-d67f0",
-  storageBucket: "protraderhack-d67f0.firebasestorage.app",
-  messagingSenderId: "1062485216321",
-   appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
+      apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
+      authDomain: "protraderhack-d67f0.firebaseapp.com",
+      projectId: "protraderhack-d67f0",
+      storageBucket: "protraderhack-d67f0.firebasestorage.app",
+      messagingSenderId: "1062485216321",
+      appId: "1:1062485216321:web:f34bb52a8acc0a75b24ac0"
     };
+
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // --- Login Function ---
-    async function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      try {
-        await auth.signInWithEmailAndPassword(email, password);
-        document.getElementById("login-page").classList.add("hidden");
-        document.getElementById("dashboard").classList.remove("hidden");
-        loadDashboard();
-      } catch (error) {
-        document.getElementById("login-error").classList.remove("hidden");
-      }
-    }
+    function addSignal() {
+      const pair = document.getElementById("pair").value;
+      const action = document.getElementById("action").value;
+      const price = document.getElementById("price").value;
 
-    // --- Logout Function ---
-    function logout() {
-      auth.signOut().then(() => {
-        document.getElementById("dashboard").classList.add("hidden");
-        document.getElementById("login-page").classList.remove("hidden");
-      });
-    }
-
-    // --- Tab Switch ---
-    function showTab(tab) {
-      ["overview", "keys", "signals", "settings"].forEach(t => {
-        document.getElementById(t+"-tab").classList.add("hidden");
-      });
-      document.getElementById(tab+"-tab").classList.remove("hidden");
-    }
-
-    // --- Load Dashboard Stats ---
-    function loadDashboard() {
-      db.collection("keys").get().then(snap => {
-        document.getElementById("active-keys").innerText = snap.size;
-      });
-      db.collection("signals").get().then(snap => {
-        document.getElementById("signals-sent").innerText = snap.size;
-      });
-      // You can add total users if you track them
-    }
-
-    // --- Generate New Key ---
-    async function generateKey() {
-      const newKey = Math.random().toString(36).substring(2, 10).toUpperCase();
-      await db.collection("keys").doc(newKey).set({
-        role: "user",
+      db.collection("signals").add({
+        pair,
+        action,
+        price,
         created: new Date().toISOString()
-      });
-      alert("✅ New Key Generated: " + newKey);
-      loadDashboard();
+      }).then(() => {
+        alert("✅ Signal added!");
+      }).catch(err => alert("❌ " + err.message));
     }
   </script>
 </body>

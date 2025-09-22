@@ -36,74 +36,57 @@
       </div>
     </div>
 
-    <!-- Login Card -->
+    <!-- Login -->
     <div id="loginCard" class="card max-w-md mx-auto mb-6">
       <h2 class="text-lg font-semibold mb-3">Admin Login</h2>
       <input id="admEmail" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
       <input id="admPass" placeholder="Password" type="password" class="w-full p-2 mb-3 rounded bg-gray-900" />
-      <div class="flex gap-2">
-        <button id="admLogin" class="btn btn-primary">Login</button>
-        <button id="quickTest" class="btn btn-green">Quick Test (fetch)</button>
-      </div>
-      <p class="small mt-3">Use an admin account (owner keys: <code>vamya</code>, <code>pthowner16</code>)</p>
+      <button id="admLogin" class="btn btn-primary w-full">Login</button>
+      <p class="small mt-3">Use an admin account</p>
     </div>
 
     <!-- Main Dashboard -->
     <div id="panel" class="hidden">
       <div class="grid">
-        <!-- Keys card -->
+        <!-- Keys -->
         <div class="card">
           <h3 class="font-semibold mb-2">Active Keys</h3>
           <div class="list" id="keysList"></div>
-
           <div class="mt-3">
-            <input id="newKeyVal" placeholder="Key string (e.g. pth7)" class="w-full p-2 mb-2 rounded bg-gray-900" />
+            <input id="newKeyVal" placeholder="Key string" class="w-full p-2 mb-2 rounded bg-gray-900" />
             <select id="newKeyDays" class="w-full mb-2 p-2 rounded bg-gray-900">
               <option value="">Permanent</option>
               <option value="7">7 days</option>
               <option value="15">15 days</option>
               <option value="30">30 days</option>
             </select>
-            <div class="flex gap-2">
-              <button id="createKeyBtn" class="btn btn-green w-full">Create Key</button>
-              <button id="deleteExpiredBtn" class="btn" style="background:#334155;color:#fff">Delete Expired</button>
-            </div>
+            <button id="createKeyBtn" class="btn btn-green w-full">Create Key</button>
           </div>
         </div>
 
-        <!-- Signals card -->
+        <!-- Signals -->
         <div class="card">
-          <h3 class="font-semibold mb-2">Signals (recent)</h3>
+          <h3 class="font-semibold mb-2">Signals</h3>
           <div class="list" id="signalsList"></div>
-
           <hr class="my-3 border-gray-700" />
           <h4 class="font-semibold mb-2">Broadcast Notification</h4>
-          <input id="broadcastMessage" placeholder="Message (optional)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-          <input id="broadcastSymbol" placeholder="Symbol (e.g. BTC/USDT or INFY-NSE)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-          <div class="flex gap-2 mb-2">
-            <select id="broadcastSignal" class="p-2 rounded bg-gray-900">
-              <option value="INFO">INFO</option>
-              <option value="BUY">BUY</option>
-              <option value="SELL">SELL</option>
-              <option value="HOLD">HOLD</option>
-            </select>
-            <input id="broadcastPrice" placeholder="Price (optional)" class="p-2 rounded bg-gray-900" />
-          </div>
-          <div class="flex gap-2">
-            <button id="broadcastBtn" class="btn btn-primary">Send Broadcast</button>
-            <button id="broadcastTest" class="btn" style="background:#475569;color:#fff">Send Test</button>
-          </div>
+          <input id="broadcastMessage" placeholder="Message" class="w-full p-2 mb-2 rounded bg-gray-900" />
+          <input id="broadcastSymbol" placeholder="Symbol (e.g. BTC/USDT)" class="w-full p-2 mb-2 rounded bg-gray-900" />
+          <select id="broadcastSignal" class="w-full p-2 mb-2 rounded bg-gray-900">
+            <option value="INFO">INFO</option>
+            <option value="BUY">BUY</option>
+            <option value="SELL">SELL</option>
+            <option value="HOLD">HOLD</option>
+          </select>
+          <input id="broadcastPrice" placeholder="Price" class="w-full p-2 mb-2 rounded bg-gray-900" />
+          <button id="broadcastBtn" class="btn btn-primary w-full">Send Broadcast</button>
         </div>
 
-        <!-- Transactions card -->
+        <!-- Transactions -->
         <div class="card">
           <h3 class="font-semibold mb-2">Transactions</h3>
           <div class="list" id="txnList"></div>
-          <div class="mt-3 small muted">Refresh below to get latest. You can change status per entry.</div>
-          <div class="flex gap-2 mt-3">
-            <button id="refreshTxBtn" class="btn btn-primary">Refresh</button>
-            <button id="exportCsv" class="btn" style="background:#334155;color:#fff">Export CSV</button>
-          </div>
+          <button id="refreshTxBtn" class="btn btn-primary w-full mt-3">Refresh</button>
         </div>
       </div>
     </div>
@@ -115,8 +98,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // ===== CONFIG =====
     const BACKEND = "https://protrader-backend-sbus.onrender.com";
+    const ADMIN_SECRET = "supersecret123";
+
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
@@ -129,188 +113,77 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ===== UI elements =====
-    const loginCard = document.getElementById('loginCard');
-    const panel = document.getElementById('panel');
-    const logoutBtn = document.getElementById('logoutBtn');
-
-    // ===== Admin login =====
     document.getElementById('admLogin').onclick = async ()=>{
-      const e = document.getElementById('admEmail').value;
-      const p = document.getElementById('admPass').value;
-      try {
-        await auth.signInWithEmailAndPassword(e,p);
-      } catch (err) { alert('Login failed: '+err.message); }
+      const e=document.getElementById('admEmail').value;
+      const p=document.getElementById('admPass').value;
+      try { await auth.signInWithEmailAndPassword(e,p); }
+      catch(err){ alert("Login failed: "+err.message); }
     };
 
     auth.onAuthStateChanged(async user=>{
-      if (!user) {
-        loginCard.style.display = '';
-        panel.style.display = 'none';
-        logoutBtn.classList.add('hidden');
-      } else {
-        loginCard.style.display = 'none';
-        panel.style.display = '';
-        logoutBtn.classList.remove('hidden');
-        loadKeys(); loadSignals(); loadTransactions();
-      }
+      if(!user){ document.getElementById('loginCard').style.display=''; document.getElementById('panel').style.display='none'; document.getElementById('logoutBtn').classList.add('hidden'); }
+      else{ document.getElementById('loginCard').style.display='none'; document.getElementById('panel').style.display=''; document.getElementById('logoutBtn').classList.remove('hidden'); loadKeys(); loadSignals(); loadTransactions(); }
     });
 
-    logoutBtn.onclick = ()=>auth.signOut();
+    document.getElementById('logoutBtn').onclick = ()=>auth.signOut();
 
-    // ===== Keys management =====
     async function loadKeys(){
-      const el = document.getElementById('keysList'); el.innerHTML = '';
-      const snap = await db.collection('keys').orderBy('expiry', 'asc').get();
+      const el=document.getElementById('keysList'); el.innerHTML='';
+      const snap=await db.collection('keys').get();
       snap.forEach(d=>{
-        const data = d.data();
-        const id = d.id;
-        const expiry = data.expiry || 'never';
-        const role = data.role || 'user';
-        const row = document.createElement('div'); row.className='row';
-        const left = document.createElement('div');
-        left.innerHTML = `<div><strong>${id}</strong><div class="muted">${role} • exp: ${expiry}</div></div>`;
-        const right = document.createElement('div');
-        const del = document.createElement('button');
-        del.className='btn btn-red'; del.innerText='Delete'; del.onclick = async ()=>{ if(!confirm('Delete key?')) return; await db.collection('keys').doc(id).delete(); loadKeys(); };
-        right.appendChild(del);
-        row.appendChild(left); row.appendChild(right);
-        el.appendChild(row);
+        const data=d.data(); const div=document.createElement('div');
+        div.className="row"; div.innerHTML=`<div><strong>${d.id}</strong> — ${data.role||'user'} — exp:${data.expiry||'never'}</div>`;
+        el.appendChild(div);
       });
     }
 
-    document.getElementById('createKeyBtn').onclick = async ()=>{
-      const k = document.getElementById('newKeyVal').value.trim();
-      const days = document.getElementById('newKeyDays').value;
-      if(!k){ alert('Enter key string'); return; }
-      const expiry = days ? new Date(Date.now() + days*24*3600*1000).toISOString() : null;
+    document.getElementById('createKeyBtn').onclick=async()=>{
+      const k=document.getElementById('newKeyVal').value||Math.random().toString(36).substring(2,10);
+      const days=document.getElementById('newKeyDays').value;
+      const expiry=days?new Date(Date.now()+days*24*3600*1000).toISOString():null;
       await db.collection('keys').doc(k).set({ role:'user', expiry });
-      document.getElementById('newKeyVal').value=''; document.getElementById('newKeyDays').value='';
-      alert('Key created: '+k);
-      loadKeys();
+      alert("Key created: "+k); loadKeys();
     };
 
-    document.getElementById('deleteExpiredBtn').onclick = async ()=>{
-      const snap = await db.collection('keys').get();
-      let count = 0;
-      snap.forEach(d=>{
-        const data = d.data();
-        if(data.expiry){
-          const exp = new Date(data.expiry);
-          if(exp < new Date()){
-            db.collection('keys').doc(d.id).delete();
-            count++;
-          }
-        }
-      });
-      alert('Deleted expired keys: '+count);
-      loadKeys();
-    };
-
-    // ===== Signals feed =====
     function loadSignals(){
-      const el = document.getElementById('signalsList'); el.innerHTML = '';
-      db.collection('signals').orderBy('timestamp','desc').limit(50).onSnapshot(snap=>{
-        el.innerHTML='';
-        snap.forEach(d=>{
-          const s = d.data();
-          const row = document.createElement('div'); row.className='row';
-          const left = document.createElement('div');
-          left.innerHTML = `<div><strong>${s.symbol}</strong> <span class="muted">${s.signal}</span><div class="small muted">${s.meta?.timestamp || s.timestamp}</div></div>`;
-          row.appendChild(left);
-          el.appendChild(row);
-        });
+      const el=document.getElementById('signalsList'); el.innerHTML='';
+      db.collection('signals').orderBy('timestamp','desc').limit(30).onSnapshot(snap=>{
+        el.innerHTML=''; snap.forEach(d=>{const s=d.data(); const div=document.createElement('div'); div.className="row"; div.innerHTML=`<div><strong>${s.symbol}</strong> ${s.signal} @ ${s.price||s.last_price}</div>`; el.appendChild(div); });
       });
     }
 
-    // ===== Broadcast =====
-    document.getElementById('broadcastBtn').onclick = async ()=>{
-      const msg = document.getElementById('broadcastMessage').value.trim();
-      const symbol = document.getElementById('broadcastSymbol').value.trim() || 'GENERIC';
-      const signal = document.getElementById('broadcastSignal').value;
-      const price = document.getElementById('broadcastPrice').value.trim() || '-';
-      const body = { message: msg, symbol, signal, price };
-      try {
-        const res = await fetch(BACKEND + '/send_notification', {
-          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
-        });
-        const data = await res.json();
-        alert('Broadcast sent to ' + (data.sent_to || 0) + ' active keys.');
-      } catch (e) { alert('Broadcast failed: ' + e.message); }
+    document.getElementById('broadcastBtn').onclick=async()=>{
+      const body={
+        message:document.getElementById('broadcastMessage').value,
+        symbol:document.getElementById('broadcastSymbol').value,
+        signal:document.getElementById('broadcastSignal').value,
+        price:document.getElementById('broadcastPrice').value
+      };
+      const res=await fetch(BACKEND+'/send_notification',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Secret':ADMIN_SECRET},body:JSON.stringify(body)});
+      const data=await res.json();
+      alert(res.ok?"Broadcast sent ✅":"Failed: "+data.error);
     };
 
-    document.getElementById('broadcastTest').onclick = async ()=>{
-      document.getElementById('broadcastMessage').value='Test notification from admin';
-      document.getElementById('broadcastSymbol').value='TEST-1';
-      document.getElementById('broadcastSignal').value='INFO';
-      document.getElementById('broadcastPrice').value='-';
-      document.getElementById('broadcastBtn').click();
-    };
-
-    // ===== Transactions =====
     async function loadTransactions(){
-      const el = document.getElementById('txnList'); el.innerHTML = 'Loading...';
-      try {
-        const res = await fetch(BACKEND + '/transactions');
-        const data = await res.json();
-        el.innerHTML = '';
-        if(!Array.isArray(data) || data.length===0){ el.innerHTML = '<div class="small muted">No transactions</div>'; return; }
-        data.forEach(t=>{
-          const row = document.createElement('div'); row.className='row';
-          const left = document.createElement('div');
-          left.innerHTML = `<div><strong>${t.user}</strong><div class="muted">${t.type} • ${t.broker} • ${t.timestamp}</div></div>`;
-          const right = document.createElement('div');
-          // status chip
-          const chip = document.createElement('span');
-          chip.className='chip ' + (t.status==='processing' ? 'status-processing' : t.status==='completed' ? 'status-completed' : 'status-cancelled');
-          chip.innerText = t.status.toUpperCase();
-          right.appendChild(chip);
-          // actions
-          const btnComplete = document.createElement('button'); btnComplete.className='btn btn-green'; btnComplete.style.marginLeft='8px'; btnComplete.innerText='Mark Completed';
-          btnComplete.onclick = async ()=>{ await updateTxStatus(t.id, 'completed'); loadTransactions(); };
-          const btnProc = document.createElement('button'); btnProc.className='btn'; btnProc.style.marginLeft='8px'; btnProc.innerText='Mark Processing';
-          btnProc.onclick = async ()=>{ await updateTxStatus(t.id, 'processing'); loadTransactions(); };
-          const btnCancel = document.createElement('button'); btnCancel.className='btn btn-red'; btnCancel.style.marginLeft='8px'; btnCancel.innerText='Mark Cancelled';
-          btnCancel.onclick = async ()=>{ if(!confirm('Mark cancelled?')) return; await updateTxStatus(t.id, 'cancelled'); loadTransactions(); };
-          right.appendChild(btnComplete); right.appendChild(btnProc); right.appendChild(btnCancel);
-
-          row.appendChild(left); row.appendChild(right);
-          el.appendChild(row);
-        });
-      } catch (e) {
-        el.innerHTML = '<div class="small muted">Error loading transactions: '+e.message+'</div>';
-      }
+      const el=document.getElementById('txnList'); el.innerHTML='Loading...';
+      const res=await fetch(BACKEND+'/transactions'); const data=await res.json(); el.innerHTML='';
+      data.forEach(t=>{
+        const div=document.createElement('div'); div.className="row"; div.innerHTML=`<div><strong>${t.user}</strong> ${t.type} • ${t.broker}</div><div class="chip status-${t.status}">${t.status}</div>`;
+        // Admin status controls
+        const btnC=document.createElement('button'); btnC.className='btn btn-green'; btnC.innerText='✔'; btnC.onclick=async()=>updateTx(t.id,'completed');
+        const btnP=document.createElement('button'); btnP.className='btn'; btnP.innerText='⏳'; btnP.onclick=async()=>updateTx(t.id,'processing');
+        const btnX=document.createElement('button'); btnX.className='btn btn-red'; btnX.innerText='✖'; btnX.onclick=async()=>updateTx(t.id,'cancelled');
+        div.appendChild(btnC); div.appendChild(btnP); div.appendChild(btnX);
+        el.appendChild(div);
+      });
     }
+    document.getElementById('refreshTxBtn').onclick=loadTransactions;
 
-    document.getElementById('refreshTxBtn').onclick = loadTransactions;
-
-    async function updateTxStatus(id, status){
-      try {
-        await db.collection('transactions').doc(id).update({ status });
-        alert('Status updated: ' + status);
-      } catch (e) {
-        alert('Update failed: '+e.message);
-      }
+    async function updateTx(id,status){
+      const res=await fetch(BACKEND+'/transactions/'+id,{method:'PATCH',headers:{'Content-Type':'application/json','X-Admin-Secret':ADMIN_SECRET},body:JSON.stringify({status})});
+      if(res.ok){ alert("Updated to "+status); loadTransactions(); }
+      else{ const d=await res.json(); alert("Error: "+d.error); }
     }
-
-    document.getElementById('exportCsv').onclick = async ()=>{
-      // fetch and convert to CSV
-      const res = await fetch(BACKEND + '/transactions');
-      const data = await res.json();
-      if(!Array.isArray(data) || data.length===0){ alert('No transactions'); return; }
-      const rows = [ ['id','user','broker','type','status','timestamp'] ];
-      data.forEach(r=> rows.push([r.id, r.user, r.broker, r.type, r.status, r.timestamp]));
-      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'transactions.csv'; a.click(); URL.revokeObjectURL(url);
-    };
-
-    // Quick test trigger
-    document.getElementById('quickTest').onclick = ()=>{ loadTransactions(); loadKeys(); loadSignals(); };
-
-    // Initial no-op to ensure auth state reacts properly
-    // (no automatic sign-in; admin must sign in)
   </script>
 </body>
-  </html>
+</html>

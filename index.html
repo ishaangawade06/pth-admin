@@ -5,16 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PTH Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <style> 
-    body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; } 
-    .card{background:#0f1724;padding:16px;border-radius:10px;} 
-  </style>
+  <style> body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; } .card{background:#0f1724;padding:16px;border-radius:10px;} </style>
 </head>
 <body class="p-4">
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-6xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-      <div><h1 class="text-2xl font-bold text-green-300">ProTraderHack — Admin</h1></div>
-      <div><button id="logoutBtn" class="px-3 py-1 bg-red-600 rounded hidden">Logout</button></div>
+      <h1 class="text-2xl font-bold text-green-300">ProTraderHack — Admin</h1>
+      <button id="logoutBtn" class="px-3 py-1 bg-red-600 rounded hidden">Logout</button>
     </div>
 
     <!-- Login -->
@@ -23,23 +20,19 @@
       <input id="admEmail" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
       <input id="admPass" placeholder="Password" type="password" class="w-full p-2 mb-3 rounded bg-gray-900" />
       <button id="admLogin" class="px-4 py-2 rounded bg-blue-600">Login</button>
-      <p class="small mt-3">This admin panel requires an admin account in Firebase Auth.</p>
     </div>
 
     <!-- Dashboard -->
     <div id="panel" class="hidden">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Keys -->
         <div class="card">
           <h3 class="font-semibold mb-2">Active Keys</h3>
-          <ul id="keysList" class="small"></ul>
+          <ul id="keysList"></ul>
           <div class="mt-3">
             <input id="newKeyVal" placeholder="Key string" class="w-full p-2 mb-2 rounded bg-gray-900" />
             <select id="newKeyDays" class="w-full mb-2 p-2 rounded bg-gray-900">
-              <option value="">Permanent</option>
-              <option value="7">7 days</option>
-              <option value="30">30 days</option>
+              <option value="">Permanent</option><option value="7">7 days</option><option value="30">30 days</option>
             </select>
             <button id="createKeyBtn" class="w-full py-2 rounded bg-green-600">Create Key</button>
           </div>
@@ -48,32 +41,14 @@
         <!-- Signals -->
         <div class="card">
           <h3 class="font-semibold mb-2">Signals</h3>
-          <ul id="signalsList" class="small mb-3"></ul>
-          <select id="sigSymbol" class="w-full p-2 mb-2 rounded bg-gray-900">
-            <option value="BTC/USDT">BTC/USDT</option>
-            <option value="ETH/USDT">ETH/USDT</option>
-            <option value="SOL/USDT">SOL/USDT</option>
-          </select>
-          <select id="sigType" class="w-full p-2 mb-2 rounded bg-gray-900">
-            <option value="BUY">BUY</option>
-            <option value="SELL">SELL</option>
-          </select>
-          <input id="sigPrice" type="number" placeholder="Price" class="w-full p-2 mb-2 rounded bg-gray-900" />
-          <textarea id="sigReasons" placeholder="Reasons (comma separated)" class="w-full p-2 mb-2 rounded bg-gray-900"></textarea>
-          <button id="pushSigBtn" class="w-full py-2 rounded bg-green-600">Push Signal</button>
+          <ul id="signalsList"></ul>
         </div>
 
-        <!-- Maintenance & Owner Keys -->
+        <!-- Transactions -->
         <div class="card">
-          <h3 class="font-semibold mb-2">Maintenance</h3>
-          <label class="flex items-center gap-2">
-            <input id="maintenanceToggle" type="checkbox" /> Enable Maintenance Mode
-          </label>
-          <hr class="my-3 border-gray-700" />
-          <h3 class="font-semibold mb-2">Owner Keys</h3>
-          <ul id="ownerKeys" class="small"></ul>
+          <h3 class="font-semibold mb-2">Transactions</h3>
+          <ul id="txnList"></ul>
         </div>
-
       </div>
     </div>
   </div>
@@ -94,15 +69,15 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.firestore();
+
+    const BACKEND = "https://protrader-backend-sbus.onrender.com";
 
     // Admin login
     document.getElementById('admLogin').onclick = async ()=>{
       const e = document.getElementById('admEmail').value;
       const p = document.getElementById('admPass').value;
-      try {
-        await auth.signInWithEmailAndPassword(e,p);
-      } catch (err) { alert('Login failed: '+err.message); }
+      try { await auth.signInWithEmailAndPassword(e,p); }
+      catch (err) { alert('Login failed: '+err.message); }
     };
 
     auth.onAuthStateChanged(async user=>{
@@ -114,88 +89,42 @@
         document.getElementById('login').style.display = 'none';
         document.getElementById('panel').style.display = '';
         document.getElementById('logoutBtn').classList.remove('hidden');
-        loadKeys(); loadSignals(); loadOwnerKeys();
+        loadKeys(); loadSignals(); loadTransactions();
       }
     });
-
     document.getElementById('logoutBtn').onclick = ()=>auth.signOut();
 
-    // Keys management
+    // Keys
     async function loadKeys(){
-      const el = document.getElementById('keysList'); el.innerHTML = '';
-      const snap = await db.collection('keys').get();
+      const el=document.getElementById('keysList'); el.innerHTML='';
+      const snap=await firebase.firestore().collection('keys').get();
       snap.forEach(d=>{
-        const data = d.data();
-        const li = document.createElement('li');
-        li.innerHTML = `<div>${d.id} — ${data.role || 'user'} — exp:${data.expiry || 'never'} 
-          <button onclick="deleteKey('${d.id}')">Delete</button></div>`;
-        el.appendChild(li);
+        const data=d.data();
+        el.innerHTML+=`<li>${d.id} — ${data.role||'user'} — exp:${data.expiry||'never'}</li>`;
       });
     }
-    async function deleteKey(id){ 
-      if(!confirm('Delete key?'))return; 
-      await db.collection('keys').doc(id).delete(); 
-      loadKeys(); 
-    }
-    document.getElementById('createKeyBtn').onclick = async ()=>{
-      const k = document.getElementById('newKeyVal').value || Math.random().toString(36).substring(2,10);
-      const days = document.getElementById('newKeyDays').value;
-      const expiry = days ? new Date(Date.now() + days*24*3600*1000).toISOString() : null;
-      await db.collection('keys').doc(k).set({ role:'user', expiry });
-      alert('Key created: '+k);
-      loadKeys();
-    };
 
-    // Signals list
+    // Signals
     function loadSignals(){
-      const el = document.getElementById('signalsList'); el.innerHTML='';
-      db.collection('signals').orderBy('time','desc').limit(30).onSnapshot(snap=>{
-        el.innerHTML = '';
+      const el=document.getElementById('signalsList');
+      firebase.firestore().collection('signals').orderBy('timestamp','desc').limit(20).onSnapshot(snap=>{
+        el.innerHTML='';
         snap.forEach(d=>{
-          const s = d.data();
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <div>
-              <strong>${s.symbol}</strong> — 
-              <span style="color:${s.type === 'BUY' ? 'lime' : 'red'}">${s.type}</span> @ ${s.price}
-              <div class="small">${(s.reasons||[]).join(', ')}</div>
-            </div>`;
-          el.appendChild(li);
+          const s=d.data();
+          el.innerHTML+=`<li><b>${s.symbol}</b> ${s.signal} @ ${s.last_price}</li>`;
         });
       });
     }
 
-    // Push signal
-    document.getElementById('pushSigBtn').onclick = async ()=>{
-      const symbol = document.getElementById('sigSymbol').value;
-      const type = document.getElementById('sigType').value;
-      const price = parseFloat(document.getElementById('sigPrice').value);
-      const reasons = document.getElementById('sigReasons').value.split(',').map(r=>r.trim()).filter(r=>r);
-
-      if(!symbol || !type || !price){
-        alert('⚠️ Fill symbol, type, and price');
-        return;
-      }
-
-      await db.collection('signals').add({
-        symbol, type, price,
-        time: Date.now(),
-        reasons
-      });
-
-      alert('✅ Signal pushed');
-      document.getElementById('sigPrice').value = '';
-      document.getElementById('sigReasons').value = '';
-    };
-
-    // Owner keys
-    async function loadOwnerKeys(){
-      const el = document.getElementById('ownerKeys'); el.innerHTML = '';
-      const snap = await db.collection('keys').where('role','==','owner').get();
-      snap.forEach(d=>{
-        el.innerHTML += `<div>${d.id} — exp:${d.data().expiry||'never'}</div>`;
+    // Transactions
+    async function loadTransactions(){
+      const res=await fetch(BACKEND+"/transactions");
+      const data=await res.json();
+      const el=document.getElementById('txnList'); el.innerHTML='';
+      data.forEach(t=>{
+        el.innerHTML+=`<li>${t.user} — ${t.type} (${t.broker}) — ${t.status} — ${t.timestamp}</li>`;
       });
     }
   </script>
 </body>
-                                                                         </html>
+</html>

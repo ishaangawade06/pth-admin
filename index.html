@@ -3,55 +3,35 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PTH Admin — ProTraderHack</title>
+  <title>PTH Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body { background:#071125; color:#e6eef8; font-family:Inter, Arial; }
+    body { background:#0b1220; color:#e6eef8; font-family:Inter,Arial; }
     .card { background:#0f1724; padding:16px; border-radius:10px; }
-    .muted { color:#9aa6b2; font-size:13px; }
-    .btn { padding:8px 12px; border-radius:8px; cursor:pointer; border:0 }
-    .btn-primary { background:#2563eb; color:white }
-    .btn-green { background:#10b981; color:white }
-    .btn-red { background:#ef4444; color:white }
-    .small { font-size:13px; color:#9aa6b2; }
-    .grid { display:grid; gap:12px; grid-template-columns: 1fr; }
-    @media(min-width:960px){ .grid { grid-template-columns: 1fr 1fr 1fr; } }
-    .list { max-height:420px; overflow:auto; padding-right:6px; }
-    .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
-    .chip { padding:6px 8px; border-radius:8px; font-weight:600; }
-    .status-processing { background:#f59e0b; color:black }
-    .status-completed { background:#10b981; color:white }
-    .status-cancelled { background:#ef4444; color:white }
   </style>
 </head>
-<body class="p-6">
-  <div class="max-w-7xl mx-auto">
+<body class="p-4">
+  <div class="max-w-5xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-green-300">ProTraderHack — Admin</h1>
-        <div class="muted">Owner tools · manage keys · view signals · broadcast notifications</div>
-      </div>
-      <div>
-        <button id="logoutBtn" class="btn btn-red hidden">Logout</button>
-      </div>
+      <div><h1 class="text-2xl font-bold text-green-300">ProTraderHack — Admin</h1></div>
+      <div><button id="logoutBtn" class="px-3 py-1 bg-red-600 rounded hidden">Logout</button></div>
     </div>
 
     <!-- Login -->
-    <div id="loginCard" class="card max-w-md mx-auto mb-6">
+    <div id="login" class="card max-w-md">
       <h2 class="text-lg font-semibold mb-3">Admin Login</h2>
       <input id="admEmail" placeholder="Email" class="w-full p-2 mb-2 rounded bg-gray-900" />
       <input id="admPass" placeholder="Password" type="password" class="w-full p-2 mb-3 rounded bg-gray-900" />
-      <button id="admLogin" class="btn btn-primary w-full">Login</button>
-      <p class="small mt-3">Use an admin account</p>
+      <button id="admLogin" class="px-4 py-2 rounded bg-blue-600">Login</button>
+      <p class="small mt-3 text-gray-400">This admin panel requires a Firebase Auth account + secret check.</p>
     </div>
 
-    <!-- Main Dashboard -->
+    <!-- Dashboard -->
     <div id="panel" class="hidden">
-      <div class="grid">
-        <!-- Keys -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="card">
           <h3 class="font-semibold mb-2">Active Keys</h3>
-          <div class="list" id="keysList"></div>
+          <ul id="keysList" class="small"></ul>
           <div class="mt-3">
             <input id="newKeyVal" placeholder="Key string" class="w-full p-2 mb-2 rounded bg-gray-900" />
             <select id="newKeyDays" class="w-full mb-2 p-2 rounded bg-gray-900">
@@ -59,48 +39,36 @@
               <option value="7">7 days</option>
               <option value="15">15 days</option>
               <option value="30">30 days</option>
+              <option value="50">50 days</option>
             </select>
-            <button id="createKeyBtn" class="btn btn-green w-full">Create Key</button>
+            <button id="createKeyBtn" class="w-full py-2 rounded bg-green-600">Create Key</button>
           </div>
         </div>
 
-        <!-- Signals -->
         <div class="card">
           <h3 class="font-semibold mb-2">Signals</h3>
-          <div class="list" id="signalsList"></div>
-          <hr class="my-3 border-gray-700" />
-          <h4 class="font-semibold mb-2">Broadcast Notification</h4>
-          <input id="broadcastMessage" placeholder="Message" class="w-full p-2 mb-2 rounded bg-gray-900" />
-          <input id="broadcastSymbol" placeholder="Symbol (e.g. BTC/USDT)" class="w-full p-2 mb-2 rounded bg-gray-900" />
-          <select id="broadcastSignal" class="w-full p-2 mb-2 rounded bg-gray-900">
-            <option value="INFO">INFO</option>
-            <option value="BUY">BUY</option>
-            <option value="SELL">SELL</option>
-            <option value="HOLD">HOLD</option>
-          </select>
-          <input id="broadcastPrice" placeholder="Price" class="w-full p-2 mb-2 rounded bg-gray-900" />
-          <button id="broadcastBtn" class="btn btn-primary w-full">Send Broadcast</button>
+          <ul id="signalsList" class="small"></ul>
         </div>
 
-        <!-- Transactions -->
         <div class="card">
-          <h3 class="font-semibold mb-2">Transactions</h3>
-          <div class="list" id="txnList"></div>
-          <button id="refreshTxBtn" class="btn btn-primary w-full mt-3">Refresh</button>
+          <h3 class="font-semibold mb-2">Maintenance</h3>
+          <label class="flex items-center gap-2">
+            <input id="maintenanceToggle" type="checkbox" /> Enable Maintenance Mode
+          </label>
+          <hr class="my-3 border-gray-700" />
+          <h3 class="font-semibold mb-2">Owner keys</h3>
+          <ul id="ownerKeys" class="small"></ul>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Firebase compat -->
+  <!-- firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
-    const BACKEND = "https://protrader-backend-sbus.onrender.com";
-    const ADMIN_SECRET = "supersecret123";
-
     const firebaseConfig = {
       apiKey: "AIzaSyC-Vt0JpfAMj9uTdZHXXyot2FvB4lQ_vvE",
       authDomain: "protraderhack-d67f0.firebaseapp.com",
@@ -113,76 +81,90 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    let adminSecret = null;
+
+    // 🔑 Admin login
     document.getElementById('admLogin').onclick = async ()=>{
-      const e=document.getElementById('admEmail').value;
-      const p=document.getElementById('admPass').value;
-      try { await auth.signInWithEmailAndPassword(e,p); }
-      catch(err){ alert("Login failed: "+err.message); }
+      const e = document.getElementById('admEmail').value;
+      const p = document.getElementById('admPass').value;
+      try {
+        await auth.signInWithEmailAndPassword(e,p);
+        // fetch admin secret from Firestore
+        const doc = await db.collection("admin").doc("config").get();
+        if (!doc.exists) throw new Error("Admin secret not set in Firestore");
+        adminSecret = doc.data().secret;
+        if (!adminSecret || adminSecret !== "vamya_pth_secret_2025") {
+          alert("Unauthorized – invalid admin secret");
+          auth.signOut();
+        }
+      } catch (err) {
+        alert("Login failed: " + err.message);
+      }
     };
 
     auth.onAuthStateChanged(async user=>{
-      if(!user){ document.getElementById('loginCard').style.display=''; document.getElementById('panel').style.display='none'; document.getElementById('logoutBtn').classList.add('hidden'); }
-      else{ document.getElementById('loginCard').style.display='none'; document.getElementById('panel').style.display=''; document.getElementById('logoutBtn').classList.remove('hidden'); loadKeys(); loadSignals(); loadTransactions(); }
+      if (!user) {
+        document.getElementById('login').style.display = '';
+        document.getElementById('panel').style.display = 'none';
+        document.getElementById('logoutBtn').classList.add('hidden');
+      } else {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('panel').style.display = '';
+        document.getElementById('logoutBtn').classList.remove('hidden');
+        loadKeys(); loadSignals(); loadOwnerKeys();
+      }
     });
 
     document.getElementById('logoutBtn').onclick = ()=>auth.signOut();
 
+    // 🔐 Keys management
     async function loadKeys(){
-      const el=document.getElementById('keysList'); el.innerHTML='';
-      const snap=await db.collection('keys').get();
+      const el = document.getElementById('keysList'); el.innerHTML = '';
+      const snap = await db.collection('keys').get();
       snap.forEach(d=>{
-        const data=d.data(); const div=document.createElement('div');
-        div.className="row"; div.innerHTML=`<div><strong>${d.id}</strong> — ${data.role||'user'} — exp:${data.expiry||'never'}</div>`;
-        el.appendChild(div);
+        const data = d.data();
+        const li = document.createElement('li');
+        li.innerHTML = `<div>${d.id} — ${data.role || 'user'} — exp:${data.expiry || 'never'}
+          <button onclick="deleteKey('${d.id}')">Delete</button></div>`;
+        el.appendChild(li);
       });
     }
-
-    document.getElementById('createKeyBtn').onclick=async()=>{
-      const k=document.getElementById('newKeyVal').value||Math.random().toString(36).substring(2,10);
-      const days=document.getElementById('newKeyDays').value;
-      const expiry=days?new Date(Date.now()+days*24*3600*1000).toISOString():null;
+    async function deleteKey(id){
+      if(!confirm('Delete key?')) return;
+      await db.collection('keys').doc(id).delete();
+      loadKeys();
+    }
+    document.getElementById('createKeyBtn').onclick = async ()=>{
+      const k = document.getElementById('newKeyVal').value || Math.random().toString(36).substring(2,10);
+      const days = document.getElementById('newKeyDays').value;
+      const expiry = days ? new Date(Date.now() + days*24*3600*1000).toISOString() : null;
       await db.collection('keys').doc(k).set({ role:'user', expiry });
-      alert("Key created: "+k); loadKeys();
+      alert('Key created: '+k);
+      loadKeys();
     };
 
+    // 📡 Signals list
     function loadSignals(){
-      const el=document.getElementById('signalsList'); el.innerHTML='';
+      const el = document.getElementById('signalsList'); el.innerHTML='';
       db.collection('signals').orderBy('timestamp','desc').limit(30).onSnapshot(snap=>{
-        el.innerHTML=''; snap.forEach(d=>{const s=d.data(); const div=document.createElement('div'); div.className="row"; div.innerHTML=`<div><strong>${s.symbol}</strong> ${s.signal} @ ${s.price||s.last_price}</div>`; el.appendChild(div); });
+        el.innerHTML = '';
+        snap.forEach(d=>{
+          const s = d.data();
+          const li = document.createElement('li');
+          li.innerHTML = `<div><strong>${s.symbol}</strong> ${s.signal} @ ${s.last_price}
+            <div class="small">${(s.reasons||[]).join(', ')}</div></div>`;
+          el.appendChild(li);
+        });
       });
     }
 
-    document.getElementById('broadcastBtn').onclick=async()=>{
-      const body={
-        message:document.getElementById('broadcastMessage').value,
-        symbol:document.getElementById('broadcastSymbol').value,
-        signal:document.getElementById('broadcastSignal').value,
-        price:document.getElementById('broadcastPrice').value
-      };
-      const res=await fetch(BACKEND+'/send_notification',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Secret':ADMIN_SECRET},body:JSON.stringify(body)});
-      const data=await res.json();
-      alert(res.ok?"Broadcast sent ✅":"Failed: "+data.error);
-    };
-
-    async function loadTransactions(){
-      const el=document.getElementById('txnList'); el.innerHTML='Loading...';
-      const res=await fetch(BACKEND+'/transactions'); const data=await res.json(); el.innerHTML='';
-      data.forEach(t=>{
-        const div=document.createElement('div'); div.className="row"; div.innerHTML=`<div><strong>${t.user}</strong> ${t.type} • ${t.broker}</div><div class="chip status-${t.status}">${t.status}</div>`;
-        // Admin status controls
-        const btnC=document.createElement('button'); btnC.className='btn btn-green'; btnC.innerText='✔'; btnC.onclick=async()=>updateTx(t.id,'completed');
-        const btnP=document.createElement('button'); btnP.className='btn'; btnP.innerText='⏳'; btnP.onclick=async()=>updateTx(t.id,'processing');
-        const btnX=document.createElement('button'); btnX.className='btn btn-red'; btnX.innerText='✖'; btnX.onclick=async()=>updateTx(t.id,'cancelled');
-        div.appendChild(btnC); div.appendChild(btnP); div.appendChild(btnX);
-        el.appendChild(div);
+    // 👑 Owner keys
+    async function loadOwnerKeys(){
+      const el = document.getElementById('ownerKeys'); el.innerHTML = '';
+      const snap = await db.collection('keys').where('role','==','owner').get();
+      snap.forEach(d=>{
+        el.innerHTML += `<div>${d.id} — exp:${d.data().expiry||'never'}</div>`;
       });
-    }
-    document.getElementById('refreshTxBtn').onclick=loadTransactions;
-
-    async function updateTx(id,status){
-      const res=await fetch(BACKEND+'/transactions/'+id,{method:'PATCH',headers:{'Content-Type':'application/json','X-Admin-Secret':ADMIN_SECRET},body:JSON.stringify({status})});
-      if(res.ok){ alert("Updated to "+status); loadTransactions(); }
-      else{ const d=await res.json(); alert("Error: "+d.error); }
     }
   </script>
 </body>
